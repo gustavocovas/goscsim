@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/xml"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -26,7 +27,12 @@ func loadTrips(filename string) ([]goscsim.Trip, error) {
 }
 
 func main() {
-	trips, err := loadTrips("/Users/gustavo/interscsimulator/scenarios/digital-rails-sp/sandbox/trips.xml")
+	var tripsFile string
+
+	flag.StringVar(&tripsFile, "trips", "", "File containing trips definitions")
+	flag.Parse()
+
+	trips, err := loadTrips(tripsFile)
 	if err != nil {
 		log.Fatalf("Error loading trips: %v", err)
 	}
@@ -38,6 +44,7 @@ func main() {
 		eventQueue.Push(&goscsim.Event{Time: trip.StartTime, Actor: car})
 	}
 
+	log.Println("Starting simulation")
 	for eventQueue.Len() > 0 {
 		event := eventQueue.Pop()
 
@@ -47,4 +54,5 @@ func main() {
 
 		event.Actor.Act(event.Time)
 	}
+	log.Println("Finished simulation")
 }
