@@ -6,10 +6,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
+
+	"gonum.org/v1/gonum/graph"
 
 	"github.com/gustavocovas/goscsim"
 	"github.com/gustavocovas/goscsim/actors"
 	"github.com/gustavocovas/goscsim/events"
+	"gonum.org/v1/gonum/graph/simple"
 )
 
 func loadTrips(filename string) ([]goscsim.Trip, error) {
@@ -26,10 +30,38 @@ func loadTrips(filename string) ([]goscsim.Trip, error) {
 	return matrix.Trips, nil
 }
 
+func loadNetwork(filename string) (graph.WeightedDirected, error) {
+	log.Printf("Loading network from %s\n", filename)
+	networkFile, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open network file: %v", err)
+	}
+
+	var network goscsim.Network
+	xml.Unmarshal(networkFile, &network)
+
+	networkGraph := simple.NewWeightedDirectedGraph(0, math.Inf(1))
+
+	for _, link := range network.LinksElement.Links {
+		networkGraph.SetWeightedEdge(simple.WeightedEdge{
+			F: simple.Node(link.From),
+			T: simple.Node(link.To),
+			W: link.Length,
+		})
+	}
+
+	log.Println("Done loading network")
+	return networkGraph, nil
+}
+
 func main() {
-	var tripsFile string
+	var (
+		tripsFile   string
+		networkFile string
+	)
 
 	flag.StringVar(&tripsFile, "trips", "", "File containing trips definitions")
+	flag.StringVar(&networkFile, "network", "", "File containing network")
 	flag.Parse()
 
 	trips, err := loadTrips(tripsFile)
@@ -37,10 +69,21 @@ func main() {
 		log.Fatalf("Error loading trips: %v", err)
 	}
 
+	network, err := loadNetwork(networkFile)
+	if err != nil {
+		log.Fatalf("Error loading network: %v", err)
+	}
+
 	eventQueue := events.New()
 
 	for _, trip := range trips {
-		car := &actors.Car{EventQueue: eventQueue, Name: trip.Name}
+		car := &actors.Car{
+			EventQueue:  eventQueue,
+			Network:     network,
+			Name:        trip.Name,
+			Origin:      trip.Origin,
+			Destination: trip.Destination,
+		}
 		eventQueue.Push(&goscsim.Event{Time: trip.StartTime, Actor: car})
 	}
 
