@@ -25,17 +25,23 @@ type Car struct {
 	Destination int64
 
 	state       state
-	currentNode graph.Node
+	current     int64
+	currentLink *goscsim.Link
 	path        []graph.Node
+
+	firstTick        int
+	distanceTraveled float64
 }
 
 func (c *Car) Act(tick int) {
 	switch c.state {
 	case ready:
+		c.firstTick = tick
+
 		df := path.DijkstraFrom(simple.Node(c.Origin), c.Network)
 		shortestPath, _ := df.To(c.Destination)
 
-		c.currentNode = simple.Node(c.Origin)
+		c.current = c.Origin
 		c.path = shortestPath[1:]
 
 		c.state = traveling
@@ -47,29 +53,49 @@ func (c *Car) Act(tick int) {
 }
 
 func (c *Car) moveToNextNode(tick int) {
+	if c.currentLink != nil {
+		c.currentLink.Vehicles--
+	}
+
+	if c.path == nil {
+		log.Printf("Warning: Nil path for car %v at tick %v", c, tick)
+		return
+	}
+
+	if len(c.path) == 0 {
+		log.Printf("Warning: Empty path for car %v at tick %v", c, tick)
+		return
+	}
 
 	nextNode := c.path[0]
 
 	if len(c.path) == 1 {
 		c.state = finished
+		log.Printf(
+			"Finished trip for car %v: orig=%v, dest=%v, len=%v, time=%v",
+			c.Name,
+			c.Origin,
+			c.Destination,
+			c.distanceTraveled,
+			tick-c.firstTick,
+		)
 	} else {
 		c.path = c.path[1:]
 	}
 
-	speed := float64(14)
-	edge := c.Network.WeightedEdge(c.currentNode.ID(), nextNode.ID())
-	time := int(edge.Weight() / speed)
+	link, ok := c.Network.WeightedEdge(c.current, nextNode.ID()).(goscsim.Link)
+	if !ok {
+		panic("Failed to cast network WeightedEdge to goscsim.Link")
+	}
 
-	log.Printf("t=%d, name=%v orig=%v dest=%v len=%v time=%v\n",
-		tick,
-		c.Name,
-		c.currentNode,
-		nextNode,
-		edge.Weight(),
-		time,
-	)
+	c.distanceTraveled += link.Weight()
+
+	speed := link.Freespeed * (1 - (float64(link.Vehicles) / float64(link.Capacity)))
+	time := int(link.Weight() / speed)
 
 	c.EventQueue.Push(&goscsim.Event{Time: tick + time, Actor: c})
+	link.Vehicles++
 
-	c.currentNode = nextNode
+	c.current = nextNode.ID()
+	c.currentLink = &link
 }

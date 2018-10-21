@@ -1,10 +1,14 @@
 package goscsim
 
-import "encoding/xml"
+import (
+	"encoding/xml"
 
-// TODO: Maybe this should be xml-specific types
+	"gonum.org/v1/gonum/graph/simple"
 
-type Link struct {
+	"gonum.org/v1/gonum/graph"
+)
+
+type XMLLink struct {
 	XMLName   xml.Name `xml:"link"`
 	ID        int64    `xml:"id,attr"`
 	From      int64    `xml:"from,attr"`
@@ -14,12 +18,33 @@ type Link struct {
 	Lanes     float64  `xml:"permlanes,attr"`
 }
 
-type Network struct {
-	XMLName      xml.Name     `xml:"network"`
-	LinksElement LinksElement `xml:"links"`
+type XMLNetwork struct {
+	XMLName      xml.Name        `xml:"network"`
+	LinksElement XMLLinksElement `xml:"links"`
 }
 
-type LinksElement struct {
-	XMLName xml.Name `xml:"links"`
-	Links   []Link   `xml:"link"`
+type XMLLinksElement struct {
+	XMLName xml.Name  `xml:"links"`
+	Links   []XMLLink `xml:"link"`
+}
+
+type Link struct {
+	F         int64
+	T         int64
+	W         float64
+	Vehicles  int64
+	Capacity  int64
+	Freespeed float64
+}
+
+func (l Link) From() graph.Node {
+	return simple.Node(l.F)
+}
+
+func (l Link) To() graph.Node {
+	return simple.Node(l.T)
+}
+
+func (l Link) Weight() float64 {
+	return l.W
 }

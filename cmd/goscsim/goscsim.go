@@ -16,6 +16,8 @@ import (
 	"gonum.org/v1/gonum/graph/simple"
 )
 
+var cellSize = 7.5
+
 func loadTrips(filename string) ([]goscsim.Trip, error) {
 	log.Printf("Loading trips from %s\n", filename)
 	tripsFile, err := ioutil.ReadFile(filename)
@@ -37,16 +39,20 @@ func loadNetwork(filename string) (graph.WeightedDirected, error) {
 		return nil, fmt.Errorf("Failed to open network file: %v", err)
 	}
 
-	var network goscsim.Network
+	var network goscsim.XMLNetwork
 	xml.Unmarshal(networkFile, &network)
 
 	networkGraph := simple.NewWeightedDirectedGraph(0, math.Inf(1))
 
 	for _, link := range network.LinksElement.Links {
-		networkGraph.SetWeightedEdge(simple.WeightedEdge{
-			F: simple.Node(link.From),
-			T: simple.Node(link.To),
-			W: link.Length,
+		capacity := int64(link.Lanes * (link.Length / cellSize))
+
+		networkGraph.SetWeightedEdge(goscsim.Link{
+			F:         link.From,
+			T:         link.To,
+			W:         link.Length,
+			Freespeed: link.Freespeed,
+			Capacity:  capacity,
 		})
 	}
 
