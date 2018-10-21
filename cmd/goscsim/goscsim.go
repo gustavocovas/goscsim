@@ -18,15 +18,14 @@ import (
 var cellSize = 7.5
 
 func init() {
-	formatter := &log.TextFormatter{
+	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp: true,
-	}
-	log.SetFormatter(formatter)
+	})
 	log.SetLevel(log.InfoLevel)
 }
 
 func loadTrips(filename string) ([]goscsim.Trip, error) {
-	log.Infof("Loading trips from %s\n", filename)
+	log.Infof("Loading trips from %s", filename)
 	tripsFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to open trips file: %v", err)
@@ -40,7 +39,7 @@ func loadTrips(filename string) ([]goscsim.Trip, error) {
 }
 
 func loadNetwork(filename string) (graph.WeightedDirected, error) {
-	log.Infof("Loading network from %s\n", filename)
+	log.Infof("Loading network from %s", filename)
 	networkFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to open network file: %v", err)

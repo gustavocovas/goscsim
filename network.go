@@ -31,7 +31,7 @@ type Link struct {
 	F         int64
 	T         int64
 	W         float64
-	Vehicles  int64
+	Vehicles  int64 // TODO: OK for now because we don't have concurrency between actors
 	Capacity  int64
 	Freespeed float64
 }

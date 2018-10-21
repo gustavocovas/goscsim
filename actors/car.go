@@ -53,6 +53,7 @@ func (c *Car) Act(tick int) {
 
 func (c *Car) moveToNextNode(tick int) {
 	if c.currentLink != nil {
+		// TODO: OK for now, while there is no concurrency between actors
 		c.currentLink.Vehicles--
 	}
 
