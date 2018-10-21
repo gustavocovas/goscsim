@@ -3,9 +3,8 @@ package goscsim
 import (
 	"encoding/xml"
 
-	"gonum.org/v1/gonum/graph/simple"
-
 	"gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/simple"
 )
 
 type XMLLink struct {

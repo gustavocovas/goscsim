@@ -1,9 +1,8 @@
 package actors
 
 import (
-	"log"
-
 	"github.com/gustavocovas/goscsim"
+	log "github.com/sirupsen/logrus"
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
@@ -58,12 +57,12 @@ func (c *Car) moveToNextNode(tick int) {
 	}
 
 	if c.path == nil {
-		log.Printf("Warning: Nil path for car %v at tick %v", c, tick)
+		log.WithFields(log.Fields{"car": c, "tick": tick}).Warn("Nil path for car")
 		return
 	}
 
 	if len(c.path) == 0 {
-		log.Printf("Warning: Empty path for car %v at tick %v", c, tick)
+		log.WithFields(log.Fields{"car": c, "tick": tick}).Warn("Empty path for car")
 		return
 	}
 
@@ -71,14 +70,13 @@ func (c *Car) moveToNextNode(tick int) {
 
 	if len(c.path) == 1 {
 		c.state = finished
-		log.Printf(
-			"Finished trip for car %v: orig=%v, dest=%v, len=%v, time=%v",
-			c.Name,
-			c.Origin,
-			c.Destination,
-			c.distanceTraveled,
-			tick-c.firstTick,
-		)
+		log.WithFields(log.Fields{
+			"name":        c.Name,
+			"origin":      c.Origin,
+			"destination": c.Destination,
+			"distance":    c.distanceTraveled,
+			"time":        tick - c.firstTick,
+		}).Info("Finished trip")
 	} else {
 		c.path = c.path[1:]
 	}

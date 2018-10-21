@@ -5,21 +5,28 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math"
-
-	"gonum.org/v1/gonum/graph"
 
 	"github.com/gustavocovas/goscsim"
 	"github.com/gustavocovas/goscsim/actors"
 	"github.com/gustavocovas/goscsim/events"
+	log "github.com/sirupsen/logrus"
+	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/simple"
 )
 
 var cellSize = 7.5
 
+func init() {
+	formatter := &log.TextFormatter{
+		FullTimestamp: true,
+	}
+	log.SetFormatter(formatter)
+	log.SetLevel(log.InfoLevel)
+}
+
 func loadTrips(filename string) ([]goscsim.Trip, error) {
-	log.Printf("Loading trips from %s\n", filename)
+	log.Infof("Loading trips from %s\n", filename)
 	tripsFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to open trips file: %v", err)
@@ -28,12 +35,12 @@ func loadTrips(filename string) ([]goscsim.Trip, error) {
 	var matrix goscsim.InterSCSimulatorMatrix
 	xml.Unmarshal(tripsFile, &matrix)
 
-	log.Println("Done loading trips")
+	log.Infoln("Done loading trips")
 	return matrix.Trips, nil
 }
 
 func loadNetwork(filename string) (graph.WeightedDirected, error) {
-	log.Printf("Loading network from %s\n", filename)
+	log.Infof("Loading network from %s\n", filename)
 	networkFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to open network file: %v", err)
@@ -56,7 +63,7 @@ func loadNetwork(filename string) (graph.WeightedDirected, error) {
 		})
 	}
 
-	log.Println("Done loading network")
+	log.Infoln("Done loading network")
 	return networkGraph, nil
 }
 
@@ -93,7 +100,7 @@ func main() {
 		eventQueue.Push(&goscsim.Event{Time: trip.StartTime, Actor: car})
 	}
 
-	log.Println("Starting simulation")
+	log.Infoln("Starting simulation")
 	for eventQueue.Len() > 0 {
 		event := eventQueue.Pop()
 
@@ -103,5 +110,5 @@ func main() {
 
 		event.Actor.Act(event.Time)
 	}
-	log.Println("Finished simulation")
+	log.Infoln("Finished simulation")
 }
